@@ -18,5 +18,5 @@ RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https:/
 EXPOSE 8000
 
 # Run app.py when the container launches
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
