@@ -2,3 +2,5 @@ fastapi
 uvicorn
 ctranslate2
 sentencepiece
+soundfile
+ttsmms
