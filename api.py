@@ -5,9 +5,9 @@ import sentencepiece as spm
 from pydantic import BaseModel
 
 class TranslationRequest(BaseModel):
-    text: str
-    src: str
-    tgt: str
+    text: str = "Чолӧм!"
+    src: str = "kpv"
+    tgt: str = "fin"
 
 TRANSLATION_MODEL_PATH = "models/converted-smugri-v4"
 SP_MODEL = "models/spm/flores200_sacrebleu_tokenizer_spm.ext.model"

@@ -5,13 +5,14 @@ FROM nvidia/cuda:11.6.1-base-ubuntu20.04
 RUN apt-get update && apt-get install -y python3 python3-pip
 
 # Set the working directory in the container
-WORKDIR /usr/src/app
+WORKDIR /
 
 # Copy the current directory contents into the container
 COPY . .
 
 # Install any needed packages specified in requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt 
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu116
 
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
