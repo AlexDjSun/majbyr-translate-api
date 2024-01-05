@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+ctranslate2
+sentencepiece
