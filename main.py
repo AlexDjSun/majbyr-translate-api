@@ -25,21 +25,21 @@ translator, sp_processor, tts_languages, tts_models = initialize_models()
 language_dict = {lang.split('_')[0]: lang for lang in LANGUAGES}
 
 @app.get("/translation_languages/")
-async def get_translation_languages():
+async def get_translation_languages() -> list:
     """
     Endpoint to get a list of supported translation languages.
     """
-    return {"languages": LANGUAGES}
+    return {"languages": list(language_dict.keys())}
 
 @app.get("/tts_languages/")
-async def get_text_to_speech_languages():
+async def get_text_to_speech_languages() -> list:
     """
     Endpoint to get a list of supported TTS languages.
     """
     return {"languages": tts_languages}
 
 @app.post("/translate/")
-async def translate_text(request: TranslationRequest):
+async def translate_text(request: TranslationRequest) -> {"result": str, "alternatives": list}:
     """
     Endpoint for text translation.
     """
@@ -62,10 +62,11 @@ async def translate_text(request: TranslationRequest):
 
     translations = [sp_processor.DecodePieces(hypothesis[1:]) for hypothesis in results[0].hypotheses]
     
-    return {"translations": translations}
+    return {"result": translations[0],
+            "alternatives": translations[1:]}
 
 @app.get("/tts/")
-def text_to_speech(lang: str, text: str):
+def text_to_speech(lang: str, text: str) -> StreamingResponse:
     """
     Endpoint for text-to-speech conversion.
     """
