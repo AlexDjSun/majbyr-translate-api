@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y python3 python3-pip
 # Install the libsndfile library
 RUN apt-get install -y libsndfile1
 
+ENV NUMBA_CACHE_DIR=/tmp
+
 # Set the working directory in the container
 WORKDIR /
 
