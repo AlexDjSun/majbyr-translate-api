@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 # Importing configurations and models
 from config import LANGUAGES
 from request_models import TTSRequest, TranslationRequest
+from response_models import TranslationResponse
 from utils import audio_streamer, process_text
 from model_manager import initialize_models
 
@@ -38,8 +39,8 @@ async def get_text_to_speech_languages() -> list:
     """
     return {"languages": tts_languages}
 
-@app.post("/translate/")
-async def translate_text(request: TranslationRequest) -> {"result": str, "alternatives": list}:
+@app.post("/translate/", response_model=TranslationResponse)
+async def translate_text(request: TranslationRequest):
     """
     Endpoint for text translation.
     """
