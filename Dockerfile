@@ -4,19 +4,17 @@ FROM nvidia/cuda:11.6.1-base-ubuntu20.04
 # Install Python and pip
 RUN apt-get update && apt-get install -y python3 python3-pip
 
-# Set the working directory in the container
-WORKDIR /
+# Install the libsndfile library
+RUN apt-get install -y libsndfile1
 
-# Copy the current directory contents into the container
-COPY . .
+# Set the working directory
+WORKDIR /app
 
-# Install any needed packages specified in requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt 
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu116
+# Copy the source code
+COPY . /app
 
-# Make port 8000 available to the world outside this container
-EXPOSE 8000
+# Install Python dependencies
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Run app.py when the container launches
+# Command to run the application
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-

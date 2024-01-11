@@ -90,16 +90,13 @@ def process_text(lang, text):
     :param text: The text to be synthesized.
     :return: The preprocessed text.
     """
-    print('process_text', lang, text)
     text = text.lower()
     text = text.replace("\n", " ")
     text = text.replace("\t", " ")
     text = text.replace("\r", " ")
     text = text.replace("  ", " ")
     if lang == "kpv":
-        print('kpv')
         text = transliterate(text)
         text = replace_digit_nums(text)
         text = " " + text.replace("ӧ", "ö").replace("і", "i").replace("\n", "\n  ").replace("ц", "тс").replace("щ", "шш")
-        print(text)
     return text

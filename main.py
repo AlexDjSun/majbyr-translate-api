@@ -1,6 +1,7 @@
 # main.py
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 # Importing configurations and models
 from config import LANGUAGES
@@ -9,6 +10,14 @@ from utils import audio_streamer, process_text
 from model_manager import initialize_models
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize models
 translator, sp_processor, tts_languages, tts_models = initialize_models()
@@ -23,7 +32,7 @@ async def get_translation_languages():
     return {"languages": LANGUAGES}
 
 @app.get("/tts_languages/")
-async def get_tts_languages():
+async def get_text_to_speech_languages():
     """
     Endpoint to get a list of supported TTS languages.
     """
@@ -55,27 +64,11 @@ async def translate_text(request: TranslationRequest):
     
     return {"translations": translations}
 
-@app.post("/tts/")
-async def text_to_speech(request: TTSRequest):
+@app.get("/tts/")
+def text_to_speech(lang: str, text: str):
     """
     Endpoint for text-to-speech conversion.
     """
-    lang = request.lang
-    text = request.text
-    text = process_text(lang, text)
-
-    if lang not in tts_languages:
-        raise HTTPException(status_code=400, detail="Unsupported language")
-    
-    tts_model = tts_models.get(lang)
-    if not tts_model:
-        raise HTTPException(status_code=500, detail="TTS model loading error")
-
-    speech_data = tts_model.synthesis(text)
-    return StreamingResponse(audio_streamer(speech_data["x"], speech_data["sampling_rate"]), media_type="audio/wav")
-
-@app.get("/tts/")
-def tts(lang: str, text: str):
     if lang not in tts_languages:
         raise HTTPException(status_code=400, detail="Unsupported language")
     

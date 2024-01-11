@@ -1,3 +1,10 @@
+import os
+
+MODELS_PATH = "models/"
+if not os.path.exists(MODELS_PATH):
+    # stop the program if the models directory does not exist
+    raise Exception("Models directory does not exist")
+
 TRANSLATION_MODEL_PATH = "models/converted-smugri-v4/"
 TTS_MODELS_PATH = "models/tts/"
 SP_MODEL = "models/spm/flores200_sacrebleu_tokenizer_spm.ext.model"

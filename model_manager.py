@@ -6,8 +6,10 @@ from scipy.io.wavfile import write
 import ctranslate2
 import sentencepiece as spm
 
-from ttsmms import TTS, download
+from ttsmms import download
+from tts_interface import TTS
 from config import TRANSLATION_MODEL_PATH, TTS_MODELS_PATH, SP_MODEL, LANGUAGES
+ 
 
 language_dict = {lang.split('_')[0]: lang for lang in LANGUAGES}
 
@@ -54,29 +56,11 @@ def download_and_load_tts_models():
 
     return tts_languages, tts_models
 
-def _synthesis(self, txt, wav_path=None):
-    txt = self._use_uroman(txt)
-    txt = self.text_mapper.filter_oov(txt)
-    stn_tst = self.text_mapper.get_text(txt, self.hps)
-    with torch.no_grad():
-        x_tst = stn_tst.unsqueeze(0).cuda()
-        x_tst_lengths = torch.LongTensor([stn_tst.size(0)]).cuda()
-        hyp = self.net_g.infer(
-            x_tst, x_tst_lengths,  
-            noise_scale= 0.667, # ?
-            noise_scale_w=0.8, # ?
-            length_scale=1.0 # speech speed
-        )[0][0,0].cpu().float().numpy()
-    if wav_path != None:
-        write(wav_path, self.hps.data.sampling_rate, hyp)
-        return wav_path
-    return {"x":hyp,"sampling_rate":self.sampling_rate}
-
 def initialize_models():
     """
     Initializes all models used in the application.
     """
-    TTS.synthesis = _synthesis
+
     translator = load_translation_model()
     sp_processor = load_sentencepiece_model()
     tts_languages, tts_models = download_and_load_tts_models()
