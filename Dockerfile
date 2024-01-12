@@ -1,5 +1,5 @@
 # Use an NVIDIA CUDA base image with Python
-FROM alexthesun/cuda116-majbyrapi-base:v0.3
+FROM alexthesun/cuda116-majbyrapi-base:v0.4
 
 ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
