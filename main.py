@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Importing configurations and models
 from config import LANGUAGES
-from request_models import TTSRequest, TranslationRequest
-from response_models import TranslationResponse
+from request_models import TranslationRequest, TTSRequest
+from response_models import TranslationResponse, TTSResponse, ListResponse
 from utils import audio_streamer, process_text
 from model_manager import initialize_models
 
@@ -25,7 +25,7 @@ translator, sp_processor, tts_languages, tts_models = initialize_models()
 
 language_dict = {lang.split('_')[0]: lang for lang in LANGUAGES}
 
-@app.get("/translation_languages/")
+@app.get("/translation_languages/", response_model=ListResponse)
 async def get_translation_languages():
     """
     Endpoint to get a list of supported translation languages.
@@ -58,7 +58,7 @@ async def translate_text(request: TranslationRequest):
         [tokenized_source], 
         target_prefix=[[f'__{tgt_lang_tag}__']], 
         num_hypotheses=4,
-        beam_size=8,
+        beam_size=4,
     )
 
     translations = [sp_processor.DecodePieces(hypothesis[1:]) for hypothesis in results[0].hypotheses]
@@ -66,7 +66,7 @@ async def translate_text(request: TranslationRequest):
     return {"result": translations[0],
             "alternatives": translations[1:]}
 
-@app.get("/tts/")
+@app.get("/tts/", response_class=StreamingResponse)
 def text_to_speech(lang: str, text: str):
     """
     Endpoint for text-to-speech conversion.
