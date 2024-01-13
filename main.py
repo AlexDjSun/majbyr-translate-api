@@ -58,7 +58,7 @@ async def translate_text(request: TranslationRequest):
         [tokenized_source], 
         target_prefix=[[f'__{tgt_lang_tag}__']], 
         num_hypotheses=4,
-        beam_size=16,
+        beam_size=8,
     )
 
     translations = [sp_processor.DecodePieces(hypothesis[1:]) for hypothesis in results[0].hypotheses]
