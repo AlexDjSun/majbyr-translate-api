@@ -3,10 +3,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-# Importing configurations and models
 from config import LANGUAGES
 from request_models import TranslationRequest, TTSRequest
-from response_models import TranslationResponse, TTSResponse, ListResponse
+from response_models import TranslationResponse, TTSResponse, ListResponse, ComplexTranslationResponse
 from utils import audio_streamer, process_text
 from model_manager import initialize_models
 
@@ -20,7 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize models
 translator, sp_processor, tts_languages, tts_models = initialize_models()
 
 language_dict = {lang.split('_')[0]: lang for lang in LANGUAGES}
@@ -65,6 +63,58 @@ async def translate_text(request: TranslationRequest):
     
     return {"result": translations[0],
             "alternatives": translations[1:]}
+
+@app.post("/translate_complex/", response_model=ComplexTranslationResponse)
+async def complex_translate(request: TranslationRequest):
+    """
+    Endpoint for text translation.
+    """
+    src_lang_tag = language_dict.get(request.src)
+    tgt_lang_tag = language_dict.get(request.tgt)
+
+    if not src_lang_tag or not tgt_lang_tag:
+        raise HTTPException(status_code=400, detail="Unsupported language")
+
+    text = request.text
+    EOS_chars = ['.', '!', '?']
+
+    if text[-1] not in EOS_chars:
+        text += '.'
+
+    for EOS_char in EOS_chars:
+        text = text.replace(EOS_char, EOS_char + '\n')
+
+    sentences = text.strip().split('\n')
+    tokenized_sentences = []
+    for sentence in sentences:
+        if sentence.strip() == '':
+            tokenized_sentences.append(['\n'])
+            continue
+        tokenized_sentences.append([f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence))
+
+    translations = []
+    for sentence in tokenized_sentences:   
+        if sentence == ['\n']:
+            translations.append(['\n'])
+            continue 
+        # Translate the tokenized text
+        translations.append(translator.translate_batch(
+            [sentence], 
+            target_prefix=[[f'__{tgt_lang_tag}__']], 
+            num_hypotheses=4,
+            beam_size=4,
+        )[0].hypotheses)
+    
+    translated_sentences = []
+    for translation in translations:
+        if translation == ['\n']:
+            translated_sentences.append('\n')
+            continue
+        translated_sentences.append([sp_processor.DecodePieces(alt[1:]) for alt in translation])
+    
+    return {'result': ' '.join(sentence[0] for sentence in translated_sentences),
+            'sentences': translated_sentences
+            }
 
 @app.get("/tts/", response_class=StreamingResponse)
 def text_to_speech(lang: str, text: str):
