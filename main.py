@@ -65,7 +65,7 @@ async def translate_text(request: TranslationRequest):
         beam_size=4,
     )
 
-    translations = [sp_processor.DecodePieces(hypothesis[1:]) for hypothesis in results[0].hypotheses]
+    translations = [sp_processor.DecodePieces(hypothesis[1:]).replace('⁇', '').replace('<unk>', '') for hypothesis in results[0].hypotheses]
     
     return {"result": translations[0],
             "alternatives": translations[1:]}
