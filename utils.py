@@ -100,3 +100,9 @@ def process_text(lang, text):
         text = replace_digit_nums(text)
         text = " " + text.replace("ӧ", "ö").replace("і", "i").replace("\n", "\n  ").replace("ц", "тс").replace("щ", "шш")
     return text
+
+def replace_unsupported_chars(text):
+    unsupported_chars_dict = {'«': '"', '»': '"', '„': '"', '“': '"', '”': '"', '…': '...', '—': '-', '–': '-', '№': '#', '’': "'", '‘': "'", '‚': "'", '‛': "'", '‹': "'", '›': "'", '‟': '"'}
+    for key, value in unsupported_chars_dict.items():
+        text = text.replace(key, value)
+    return text

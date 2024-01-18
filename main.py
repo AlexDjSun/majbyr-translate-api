@@ -6,8 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import LANGUAGES
 from request_models import TranslationRequest, TTSRequest
 from response_models import TranslationResponse, TTSResponse, ListResponse, ComplexTranslationResponse
-from utils import audio_streamer, process_text
+from utils import audio_streamer, process_text, replace_unsupported_chars
 from model_manager import initialize_models
+
+import re
+import nltk
+
+nltk.download('punkt')
 
 app = FastAPI()
 
@@ -48,8 +53,9 @@ async def translate_text(request: TranslationRequest):
     if not src_lang_tag or not tgt_lang_tag:
         raise HTTPException(status_code=400, detail="Unsupported language")
 
+    text = replace_unsupported_chars(request.text)
     # Prepend the source language tag and tokenize
-    tokenized_source = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(request.text)
+    tokenized_source = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(text)
 
     # Translate the tokenized text
     results = translator.translate_batch(
@@ -64,7 +70,7 @@ async def translate_text(request: TranslationRequest):
     return {"result": translations[0],
             "alternatives": translations[1:]}
 
-@app.post("/translate_complex/", response_model=ComplexTranslationResponse)
+@app.post("/translate_complex/")#, response_model=ComplexTranslationResponse)
 async def complex_translate(request: TranslationRequest):
     """
     Endpoint for text translation.
@@ -75,46 +81,46 @@ async def complex_translate(request: TranslationRequest):
     if not src_lang_tag or not tgt_lang_tag:
         raise HTTPException(status_code=400, detail="Unsupported language")
 
-    text = request.text
-    EOS_chars = ['.', '!', '?']
+    text = replace_unsupported_chars(request.text)
 
-    if text[-1] not in EOS_chars:
-        text += '.'
+    paragraphs = [p for p in text.split('\n')]
 
-    for EOS_char in EOS_chars:
-        text = text.replace(EOS_char, EOS_char + '\n')
-
-    sentences = text.strip().split('\n')
-    tokenized_sentences = []
-    for sentence in sentences:
-        if sentence.strip() == '':
-            tokenized_sentences.append(['\n'])
+    translation_lists = []
+    for paragraph in paragraphs:
+        paragraph_translations = []
+        if not paragraph.strip():
+            translation_lists.append([['\n']])
             continue
-        tokenized_sentences.append([f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence))
+        sentences = nltk.sent_tokenize(paragraph)
 
-    translations = []
-    for sentence in tokenized_sentences:   
-        if sentence == ['\n']:
-            translations.append(['\n'])
-            continue 
-        # Translate the tokenized text
-        translations.append(translator.translate_batch(
-            [sentence], 
-            target_prefix=[[f'__{tgt_lang_tag}__']], 
-            num_hypotheses=4,
-            beam_size=4,
-        )[0].hypotheses)
-    
-    translated_sentences = []
-    for translation in translations:
-        if translation == ['\n']:
-            translated_sentences.append('\n')
-            continue
-        translated_sentences.append([sp_processor.DecodePieces(alt[1:]) for alt in translation])
-    
-    return {'result': ' '.join(sentence[0] for sentence in translated_sentences),
-            'sentences': translated_sentences
-            }
+        # Process each sentence in the paragraph
+        for sentence in sentences:
+            tokenized_sentence = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence)
+            tokenized_translations = translator.translate_batch(
+                [tokenized_sentence],
+                target_prefix=[[f'__{tgt_lang_tag}__']],
+                num_hypotheses=4,
+                beam_size=4,
+            )[0].hypotheses
+
+            sentence_translations = []
+            for translation in tokenized_translations:
+                translated_sentence = sp_processor.DecodePieces(translation[1:]).replace('⁇', '').replace('<unk>', '')
+                if not sentence_translations or re.sub('\W+', '', sentence_translations[0]) != re.sub('\W+', '', sentence):
+                    sentence_translations.append(translated_sentence)
+
+            paragraph_translations.append(sentence_translations)
+        translation_lists.append(paragraph_translations)
+        translation_lists.append([['\n']])
+
+    # recontruct the text using first translation for each sentence
+    reconstructed_text = ''
+    for paragraph_sentences in translation_lists:
+        paragraph = ' '.join([sentences[0] for sentences in paragraph_sentences])
+        reconstructed_text += paragraph
+
+    return {"result": reconstructed_text,
+            "translations": translation_lists}
 
 @app.get("/tts/", response_class=StreamingResponse)
 def text_to_speech(lang: str, text: str):
