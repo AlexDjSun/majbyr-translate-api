@@ -12,7 +12,7 @@ from model_manager import initialize_models
 import re
 import nltk
 
-nltk.download('punkt')
+nltk.download('punkt', download_dir='/usr/local/nltk_data')
 
 app = FastAPI()
 
