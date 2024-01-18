@@ -111,7 +111,6 @@ async def complex_translate(request: TranslationRequest):
 
             paragraph_translations.append(sentence_translations)
         translation_lists.append(paragraph_translations)
-        translation_lists.append([['\n']])
 
     # recontruct the text using first translation for each sentence
     reconstructed_text = ''
