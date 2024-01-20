@@ -62,6 +62,9 @@ class TTS:
                 x_tst, x_tst_lengths, noise_scale=.667,
                 noise_scale_w=0.8, length_scale=1.0
             )[0][0,0].cpu().float().numpy()
+        del x_tst, x_tst_lengths
+        torch.cuda.empty_cache()
+        
         if wav_path != None:
             write(wav_path, self.hps.data.sampling_rate, hyp)
             return wav_path
