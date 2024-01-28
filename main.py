@@ -89,7 +89,7 @@ async def complex_translate(request: TranslationRequest):
     for paragraph in paragraphs:
         paragraph_translations = []
         if not paragraph.strip():
-            translation_lists.append([['\n']])
+            translation_lists.append([['']])
             continue
         sentences = nltk.sent_tokenize(paragraph)
 
