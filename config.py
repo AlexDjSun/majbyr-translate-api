@@ -8,6 +8,8 @@ if not os.path.exists(MODELS_PATH):
 TRANSLATION_MODEL_PATH = "models/converted-smugri-v4/"
 TTS_MODELS_PATH = "models/tts/"
 SP_MODEL = "models/spm/flores200_sacrebleu_tokenizer_spm.ext.model"
+LANGID_MODEL_PATH = "models/langid/langdetect_v0.multi.bin"
+
 LANGUAGES = [
     'kpv_Cyrl', 
     'mhr_Cyrl', 

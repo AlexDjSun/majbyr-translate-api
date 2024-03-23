@@ -1,4 +1,4 @@
-FROM alexthesun/cuda116-majbyrapi-base:v0.6
+FROM alexthesun/cuda116-majbyrapi-base:v0.7
 
 COPY . /
 

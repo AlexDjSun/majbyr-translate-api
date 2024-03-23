@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import LANGUAGES
 from request_models import TranslationRequest, TTSRequest
 from response_models import TranslationResponse, TTSResponse, ListResponse, ComplexTranslationResponse
-from utils import audio_streamer, process_text, replace_unsupported_chars
+from utils import audio_streamer, process_text_for_tts, replace_unsupported_chars
 from model_manager import initialize_models
 
 import re
@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-translator, sp_processor, tts_languages, tts_models = initialize_models()
+translator, sp_processor, tts_languages, tts_models, langid = initialize_models()
 
 language_dict = {lang.split('_')[0]: lang for lang in LANGUAGES}
 
@@ -45,7 +45,7 @@ async def get_text_to_speech_languages():
 @app.post("/translate/", response_model=TranslationResponse)
 async def translate_text(request: TranslationRequest):
     """
-    Endpoint for text translation.
+    Endpoint for text translation all at once.
     """
     src_lang_tag = language_dict.get(request.src)
     tgt_lang_tag = language_dict.get(request.tgt)
@@ -71,9 +71,9 @@ async def translate_text(request: TranslationRequest):
             "alternatives": translations[1:]}
 
 @app.post("/translate_complex/")#, response_model=ComplexTranslationResponse)
-async def complex_translate(request: TranslationRequest):
+async def translate_by_sentences(request: TranslationRequest):
     """
-    Endpoint for text translation.
+    Endpoint for text translation by sentences.
     """
     src_lang_tag = language_dict.get(request.src)
     tgt_lang_tag = language_dict.get(request.tgt)
@@ -130,7 +130,15 @@ def text_to_speech(lang: str, text: str):
         raise HTTPException(status_code=400, detail="Unsupported language")
     
     tts = tts_models[lang]
-    text = process_text(lang, text)
+    text = process_text_for_tts(lang, text)
     speech_data = tts.synthesis(text)
 
     return StreamingResponse(audio_streamer(speech_data["x"], speech_data["sampling_rate"]), media_type="audio/wav")
+
+@app.get('/detect_language/')
+async def detect_language(text: str):
+    """
+    Endpoint for language detection.
+    """
+    lang = langid.predict(text)[0][0].split('__')[-1]
+    return lang

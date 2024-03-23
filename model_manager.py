@@ -8,7 +8,11 @@ import sentencepiece as spm
 
 from ttsmms import download
 from tts_interface import TTS
-from config import TRANSLATION_MODEL_PATH, TTS_MODELS_PATH, SP_MODEL, LANGUAGES
+
+import fasttext
+
+from config import TRANSLATION_MODEL_PATH, TTS_MODELS_PATH, SP_MODEL, LANGID_MODEL_PATH, LANGUAGES
+
  
 
 language_dict = {lang.split('_')[0]: lang for lang in LANGUAGES}
@@ -56,6 +60,13 @@ def download_and_load_tts_models():
 
     return tts_languages, tts_models
 
+def load_langid_model():
+    """
+    Loads the langid model.
+    """
+    langid_model = fasttext.load_model(LANGID_MODEL_PATH)
+    return langid_model
+
 def initialize_models():
     """
     Initializes all models used in the application.
@@ -64,6 +75,7 @@ def initialize_models():
     translator = load_translation_model()
     sp_processor = load_sentencepiece_model()
     tts_languages, tts_models = download_and_load_tts_models()
+    langid = load_langid_model()
 
-    return translator, sp_processor, tts_languages, tts_models
+    return translator, sp_processor, tts_languages, tts_models, langid
 

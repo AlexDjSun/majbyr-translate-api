@@ -5,3 +5,4 @@ sentencepiece
 soundfile
 ttsmms
 nltk
+fasttext
