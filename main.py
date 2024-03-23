@@ -70,7 +70,7 @@ async def translate_text(request: TranslationRequest):
     return {"result": translations[0],
             "alternatives": translations[1:]}
 
-@app.post("/translate_complex/")#, response_model=ComplexTranslationResponse)
+@app.post("/translate_by_sentences/")#, response_model=ComplexTranslationResponse)
 async def translate_by_sentences(request: TranslationRequest):
     """
     Endpoint for text translation by sentences.
