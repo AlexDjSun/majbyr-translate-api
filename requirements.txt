@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-ctranslate2
+ctranslate2==3.24.0
 sentencepiece
 soundfile
 ttsmms
