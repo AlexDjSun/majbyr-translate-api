@@ -8,10 +8,12 @@ from ttsmms import TextMapper
 from ttsmms.models import SynthesizerTrn
 from scipy.io.wavfile import write
 
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-else:
-    device = torch.device("cpu")
+# if torch.cuda.is_available():
+#     device = torch.device("cuda")
+# else:
+#     device = torch.device("cpu")
+
+device = torch.device("cpu")
 
 class TTS:
     def __init__(self, model_dir_path: str, uroman_dir:str=None) -> None:
@@ -63,7 +65,7 @@ class TTS:
                 noise_scale_w=0.8, length_scale=1.0
             )[0][0,0].cpu().float().numpy()
         del x_tst, x_tst_lengths
-        torch.cuda.empty_cache()
+        
         
         if wav_path != None:
             write(wav_path, self.hps.data.sampling_rate, hyp)
