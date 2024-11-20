@@ -1,8 +1,8 @@
 fastapi
 uvicorn
-ctranslate2==3.24.0
+ctranslate2==4.5.0
 sentencepiece
 soundfile
 ttsmms
-nltk
+nltk==3.8.1
 fasttext
