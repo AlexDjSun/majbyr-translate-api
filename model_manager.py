@@ -21,7 +21,7 @@ def load_translation_model():
     """
     Loads the translation model.
     """
-    translator = ctranslate2.Translator(TRANSLATION_MODEL_PATH, device="cuda")
+    translator = ctranslate2.Translator(TRANSLATION_MODEL_PATH, device="cuda", compute_type="int8_bfloat16")
     print("Translation model is loaded")
     return translator
 
