@@ -54,10 +54,8 @@ async def translate_text(request: TranslationRequest):
         raise HTTPException(status_code=400, detail="Unsupported language")
 
     text = replace_unsupported_chars(request.text)
-    # Prepend the source language tag and tokenize
     tokenized_source = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(text)
 
-    # Translate the tokenized text
     results = translator.translate_batch(
         [tokenized_source], 
         target_prefix=[[f'__{tgt_lang_tag}__']], 
@@ -93,7 +91,6 @@ async def translate_by_sentences(request: TranslationRequest):
             continue
         sentences = nltk.sent_tokenize(paragraph)
 
-        # Process each sentence in the paragraph
         for sentence in sentences:
             tokenized_sentence = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence)
             tokenized_translations = translator.translate_batch(
@@ -106,13 +103,13 @@ async def translate_by_sentences(request: TranslationRequest):
             sentence_translations = []
             for translation in tokenized_translations:
                 translated_sentence = sp_processor.DecodePieces(translation[1:]).replace('⁇', '').replace('<unk>', '')
-                if not sentence_translations or re.sub('\W+', '', sentence_translations[0]) != re.sub('\W+', '', sentence):
-                    sentence_translations.append(translated_sentence)
-
+                # if not sentence_translations or re.sub('\W+', '', sentence_translations[0]) != re.sub('\W+', '', sentence):
+                #     sentence_translations.append(translated_sentence)
+                sentence_translations.append(translated_sentence)
+                
             paragraph_translations.append(sentence_translations)
         translation_lists.append(paragraph_translations)
 
-    # recontruct the text using first translation for each sentence
     reconstructed_text = ''
     for paragraph_sentences in translation_lists:
         paragraph = ' '.join([sentences[0] for sentences in paragraph_sentences])
