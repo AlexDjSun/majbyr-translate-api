@@ -93,7 +93,7 @@ async def translate_by_sentences(request: TranslationRequest):
 
         for sentence in sentences:
             tokenized_sentence = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence)
-            tokenized_translations = translator.translate_batch(
+            tokenized_translations = await translator.translate_batch(
                 [tokenized_sentence],
                 target_prefix=[[f'__{tgt_lang_tag}__']],
                 num_hypotheses=4,
