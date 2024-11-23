@@ -12,6 +12,8 @@ from model_manager import initialize_models
 import re
 import nltk
 
+import asyncio
+
 nltk.download('punkt', download_dir='/tmp')
 
 app = FastAPI()
@@ -93,18 +95,15 @@ async def translate_by_sentences(request: TranslationRequest):
 
         for sentence in sentences:
             tokenized_sentence = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence)
-            tokenized_translations = await translator.translate_batch(
-                [tokenized_sentence],
-                target_prefix=[[f'__{tgt_lang_tag}__']],
-                num_hypotheses=4,
-                beam_size=4,
-            )[0].hypotheses
+            tokenized_translations = await asyncio.to_thread(translator.translate_batch,
+                                                             [tokenized_sentence],
+                                                             target_prefix=[[f'__{tgt_lang_tag}__']],
+                                                             num_hypotheses=4,
+                                                             beam_size=4)
 
             sentence_translations = []
-            for translation in tokenized_translations:
+            for translation in tokenized_translations[0].hypotheses:
                 translated_sentence = sp_processor.DecodePieces(translation[1:]).replace('⁇', '').replace('<unk>', '')
-                # if not sentence_translations or re.sub('\W+', '', sentence_translations[0]) != re.sub('\W+', '', sentence):
-                #     sentence_translations.append(translated_sentence)
                 sentence_translations.append(translated_sentence)
                 
             paragraph_translations.append(sentence_translations)
