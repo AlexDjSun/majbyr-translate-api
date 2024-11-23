@@ -58,7 +58,7 @@ async def translate_text(request: TranslationRequest):
     text = replace_unsupported_chars(request.text)
     tokenized_source = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(text)
 
-    results = translator.translate_batch(
+    results = await asyncio.to_thread(translator.translate_batch,
         [tokenized_source], 
         target_prefix=[[f'__{tgt_lang_tag}__']], 
         num_hypotheses=4,
@@ -96,10 +96,10 @@ async def translate_by_sentences(request: TranslationRequest):
         for sentence in sentences:
             tokenized_sentence = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence)
             tokenized_translations = await asyncio.to_thread(translator.translate_batch,
-                                                             [tokenized_sentence],
-                                                             target_prefix=[[f'__{tgt_lang_tag}__']],
-                                                             num_hypotheses=4,
-                                                             beam_size=4)
+                                                            [tokenized_sentence],
+                                                            target_prefix=[[f'__{tgt_lang_tag}__']],
+                                                            num_hypotheses=4,
+                                                            beam_size=4)
 
             sentence_translations = []
             for translation in tokenized_translations[0].hypotheses:
