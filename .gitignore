@@ -4,3 +4,4 @@ models/*
 __pycache__/*
 base_container/*
 .dockerignore
+models
