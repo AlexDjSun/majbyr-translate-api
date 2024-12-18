@@ -92,20 +92,19 @@ async def translate_by_sentences(request: TranslationRequest):
             translation_lists.append([['']])
             continue
         sentences = nltk.sent_tokenize(paragraph)
-
-        for sentence in sentences:
-            tokenized_sentence = [f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence)
-            tokenized_translations = await asyncio.to_thread(translator.translate_batch,
-                                                            [tokenized_sentence],
-                                                            target_prefix=[[f'__{tgt_lang_tag}__']],
+        tokenized_sentences = [[f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence) for sentence in sentences]
+        tgt_lang_tag_list = [[f'__{tgt_lang_tag}__'] for _ in tokenized_sentences]
+        tokenized_translations = await asyncio.to_thread(translator.translate_batch,
+                                                            tokenized_sentences,
+                                                            target_prefix=tgt_lang_tag_list,
                                                             num_hypotheses=4,
                                                             beam_size=4)
 
+        for i, translation in enumerate(tokenized_translations):
             sentence_translations = []
-            for translation in tokenized_translations[0].hypotheses:
-                translated_sentence = sp_processor.DecodePieces(translation[1:]).replace('⁇', '').replace('<unk>', '')
+            for hypothesis in translation.hypotheses:
+                translated_sentence = sp_processor.DecodePieces(hypothesis[1:]).replace('⁇', '').replace('<unk>', '')
                 sentence_translations.append(translated_sentence)
-                
             paragraph_translations.append(sentence_translations)
         translation_lists.append(paragraph_translations)
 
