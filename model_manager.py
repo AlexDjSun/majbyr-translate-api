@@ -37,7 +37,6 @@ def download_and_load_tts_models():
     """
     Downloads (if necessary) and loads TTS models for the supported languages.
     """
-    # Create TTS directory if it doesn't exist
     if not os.path.exists(TTS_MODELS_PATH): 
         os.makedirs(TTS_MODELS_PATH)
 
