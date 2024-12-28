@@ -111,9 +111,63 @@ async def translate_by_sentences(request: TranslationRequest):
     reconstructed_text = ''
     for paragraph_sentences in translation_lists:
         paragraph = ' '.join([sentences[0] for sentences in paragraph_sentences])
-        reconstructed_text += paragraph
+        reconstructed_text += paragraph + '\n'
 
-    return {"result": reconstructed_text,
+    return {"result": reconstructed_text.strip(),
+            "translations": translation_lists}
+
+@app.post("/translate_v2/")#, response_model=ComplexTranslationResponse)
+async def translate_v2(request: TranslationRequest):
+    """
+    Endpoint for text translation by sentences.
+    """
+    src_lang_tag = language_dict.get(request.src)
+    tgt_lang_tag = language_dict.get(request.tgt)
+
+    if not src_lang_tag or not tgt_lang_tag:
+        raise HTTPException(status_code=400, detail="Unsupported language")
+
+    text = replace_unsupported_chars(request.text)
+
+    paragraphs = text.split('\n')
+
+    # collect senetnces
+    src_sentences = []
+    src_dict = {f"p{n}": nltk.sent_tokenize(paragraph) for n, paragraph in enumerate(paragraphs) if paragraph.strip()}
+    for sentences in src_dict.values():
+        src_sentences.extend(sentences)
+
+    tokenized_sentences = [[f'__{src_lang_tag}__'] + sp_processor.EncodeAsPieces(sentence) for sentence in src_sentences]
+    tgt_lang_tag_list = [[f'__{tgt_lang_tag}__'] for _ in tokenized_sentences]
+    tokenized_translations = await asyncio.to_thread(translator.translate_batch,
+                                                        tokenized_sentences,
+                                                        target_prefix=tgt_lang_tag_list,
+                                                        num_hypotheses=4,
+                                                        beam_size=4)
+
+    translated_sentences = []
+    for i, translation in enumerate(tokenized_translations):
+        sentence_translations = []
+        for hypothesis in translation.hypotheses:
+            translated_sentence = sp_processor.DecodePieces(hypothesis[1:]).replace('⁇', '')
+            sentence_translations.append(translated_sentence)
+        translated_sentences.append(sentence_translations)
+    
+    # paragraph structure
+    sentence_index = 0
+    translated_paragraphs_dict = {}
+    for key, sentences in src_dict.items():
+        translated_paragraphs_dict[key] = translated_sentences[sentence_index:sentence_index + len(sentences)]
+        sentence_index += len(sentences)
+
+    translation_lists = [translated_paragraphs_dict.get(f"p{n}", [[""]]) for n in range(len(paragraphs))]
+
+    reconstructed_text = ''
+    for paragraph_sentences in translation_lists:
+        paragraph = ' '.join([sentences[0] for sentences in paragraph_sentences])
+        reconstructed_text += paragraph + '\n'
+
+    return {"result": reconstructed_text.strip(),
             "translations": translation_lists}
 
 @app.get("/tts/", response_class=StreamingResponse)
